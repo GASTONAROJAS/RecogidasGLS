@@ -3,122 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comprobante Recogida GLS - Hisense</title>
+    <title>HISENSE | Confirmación de Recogida</title>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
     <style>
-        :root { --gls-blue: #002e6d; --gls-yellow: #ffcb05; }
-        body { font-family: sans-serif; background: #f4f4f9; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { color: var(--gls-blue); text-align: center; border-bottom: 2px solid var(--gls-yellow); padding-bottom: 10px; margin-top: 0; }
-        label { display: block; margin-top: 15px; font-weight: bold; color: #333; }
-        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-        #signature-pad { border: 1px solid #ccc; border-radius: 4px; background: #fafafa; width: 100%; height: 200px; cursor: crosshair; touch-action: none; }
-        .buttons { margin-top: 20px; }
-        button { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 4px; cursor: pointer; border: none; }
-        .btn-confirm { background: var(--gls-blue); color: white; margin-bottom: 10px; }
-        .btn-confirm:disabled { background: #ccc; }
-        .btn-clear { background: #eee; color: #333; font-size: 14px; padding: 8px; margin-top: 5px; }
-        .loading { display: none; text-align: center; color: var(--gls-blue); font-weight: bold; padding: 10px; }
+        :root { --hisense-teal: #00897B; --hisense-dark: #333; --bg-gray: #f8f9fa; }
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg-gray);
+            margin: 0; padding: 20px;
+            display: flex; justify-content: center;
+            background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('https://www.hisense.es/wp-content/uploads/2021/01/logo-hisense.png');
+            background-position: center; background-repeat: no-repeat; background-attachment: fixed;
+        }
+        .card { 
+            background: white; width: 100%; max-width: 450px;
+            border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden; border-top: 6px solid var(--hisense-teal);
+        }
+        .header { padding: 30px 20px; text-align: center; background: #fff; }
+        .header img { max-width: 150px; margin-bottom: 10px; }
+        .header h2 { margin: 0; color: var(--hisense-dark); font-size: 1.4rem; letter-spacing: 1px; }
+        
+        form { padding: 20px 30px; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-size: 0.9rem; }
+        input { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; 
+            box-sizing: border-box; font-size: 1rem; transition: border 0.3s;
+        }
+        input:focus { border-color: var(--hisense-teal); outline: none; }
+        
+        .signature-container { background: #fdfdfd; border: 1px dashed #ccc; border-radius: 6px; margin-top: 5px; }
+        canvas { width: 100%; height: 180px; cursor: crosshair; }
+        
+        .btn-confirm { 
+            background: var(--hisense-teal); color: white; border: none; width: 100%;
+            padding: 16px; font-size: 1.1rem; font-weight: bold; border-radius: 6px;
+            cursor: pointer; margin-top: 20px; transition: background 0.3s;
+        }
+        .btn-confirm:hover { background: #00695C; }
+        .btn-clear { 
+            background: none; border: none; color: #888; font-size: 0.8rem; 
+            text-decoration: underline; cursor: pointer; float: right; margin-top: 5px;
+        }
+        .loading { display: none; text-align: center; padding: 20px; font-weight: bold; color: var(--hisense-teal); }
     </style>
 </head>
 <body>
 
-<div class="container" id="form-container">
-    <h2>Recogida de Repuestos</h2>
-    
-    <form id="recogidaForm">
-        <label>Fecha de Recogida</label>
-        <input type="date" id="fecha" required>
+<div class="card" id="mainCard">
+    <div class="header">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Hisense_logo.svg/1280px-Hisense_logo.svg.png" alt="Hisense">
+        <h2>Confirmación de Recogida</h2>
+    </div>
 
-        <label>Número de Orden</label>
-        <input type="text" id="orden" placeholder="Ej: HIS-12345" required>
-
-        <label>Nombre del Transportista</label>
-        <input type="text" id="nombre" placeholder="Nombre completo" required>
-
-        <label>Cantidad de Bultos</label>
-        <input type="number" id="bultos" min="1" value="1" required>
-
-        <label>Firma Digital</label>
-        <canvas id="signature-pad"></canvas>
-        <button type="button" class="btn-clear" id="clearBtn">Limpiar Firma</button>
-
-        <div class="buttons">
-            <div id="status" class="loading">Enviando a Google Sheets...</div>
-            <button type="submit" class="btn-confirm" id="submitBtn">Confirmar Recogida</button>
+    <form id="formRecogida">
+        <div class="input-group">
+            <label>NÚMERO DE RECOGIDA</label>
+            <input type="text" id="recogida" placeholder="Ej: REC-123456" required>
         </div>
+
+        <div class="input-group">
+            <label>NOMBRE DEL TRANSPORTISTA</label>
+            <input type="text" id="nombre" placeholder="Nombre completo" required>
+        </div>
+
+        <div class="input-group">
+            <label>CANTIDAD DE BULTOS</label>
+            <input type="number" id="bultos" min="1" value="1" required>
+        </div>
+
+        <div class="input-group">
+            <label>FIRMA DEL CONDUCTOR</label>
+            <div class="signature-container">
+                <canvas id="signature-pad"></canvas>
+            </div>
+            <button type="button" class="btn-clear" onclick="pad.clear()">Borrar firma</button>
+        </div>
+
+        <div id="loader" class="loading">Procesando envío oficial...</div>
+        <button type="submit" class="btn-confirm" id="btnSubmit">CONFIRMAR RECOGIDA</button>
     </form>
 </div>
 
 <script>
-    // URL DE TU GOOGLE APPS SCRIPT
-    const APP_URL = "https://script.google.com/macros/s/AKfycbyDNed5QQ2uh4qE5cZpI2pijKh9RnXOcjhGZd6Al-f49pRVjKSXS3dvcUtbnj3yf7VT/exec";
+    const APP_URL = "https://script.google.com/macros/s/AKfycbyDNed5QQ2uh4qE5cZpI2pijKh9RnXOcjhGZd6Al-f49pRVjKSXS3dvcUtbnj3yf7VT/exec"; // <--- ACTUALIZA ESTO
+    const canvas = document.getElementById('signature-pad');
+    const pad = new SignaturePad(canvas);
 
-    const canvas = document.getElementById("signature-pad");
-    const signaturePad = new SignaturePad(canvas);
-
-    // Ajustar tamaño del canvas dinámicamente
+    // Ajuste de resolución de firma
     function resizeCanvas() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
         canvas.width = canvas.offsetWidth * ratio;
         canvas.height = canvas.offsetHeight * ratio;
         canvas.getContext("2d").scale(ratio, ratio);
-        signaturePad.clear();
+        pad.clear();
     }
     window.onresize = resizeCanvas;
     resizeCanvas();
 
-    document.getElementById("clearBtn").addEventListener("click", () => signaturePad.clear());
-
-    document.getElementById("recogidaForm").addEventListener("submit", function(e) {
+    document.getElementById('formRecogida').addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        if (signaturePad.isEmpty()) {
-            alert("Por favor, firma antes de confirmar.");
-            return;
-        }
+        if (pad.isEmpty()) return alert("La firma es obligatoria");
 
-        const btn = document.getElementById("submitBtn");
-        const status = document.getElementById("status");
-        
-        btn.disabled = true;
-        btn.style.display = "none";
-        status.style.display = "block";
+        document.getElementById('btnSubmit').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
 
-        const formData = {
-            fecha: document.getElementById("fecha").value,
-            orden: document.getElementById("orden").value,
-            nombre: document.getElementById("nombre").value,
-            bultos: document.getElementById("bultos").value,
-            firma: signaturePad.toDataURL("image/png") 
+        const payload = {
+            recogida: document.getElementById('recogida').value,
+            nombre: document.getElementById('nombre').value,
+            bultos: document.getElementById('bultos').value,
+            firma: pad.toDataURL()
         };
 
-        // Enviar como texto plano para evitar bloqueos de CORS en modo no-cors
         fetch(APP_URL, {
-            method: "POST",
-            mode: "no-cors", 
-            cache: "no-cache",
-            headers: {
-                "Content-Type": "text/plain" 
-            },
-            body: JSON.stringify(formData)
-        })
-        .then(() => {
-            document.getElementById("form-container").innerHTML = `
-                <div style="text-align:center; padding: 40px 10px;">
-                    <h2 style="color: green; border:none;">✅ ¡Recogida Confirmada!</h2>
-                    <p>La información se ha enviado correctamente a la hoja de control.</p>
-                    <p style="font-size: 12px; color: #666;">ID de Registro: ${Date.now()}</p>
-                    <button onclick="location.reload()" class="btn-clear" style="width:auto; padding: 10px 20px;">Nueva Recogida</button>
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(payload)
+        }).then(() => {
+            document.getElementById('mainCard').innerHTML = `
+                <div style="padding:50px 20px; text-align:center;">
+                    <div style="font-size:50px;">✅</div>
+                    <h2 style="color:var(--hisense-teal)">Envío Confirmado</h2>
+                    <p>La recogida ha sido registrada correctamente en el sistema de Hisense Iberia.</p>
+                    <button onclick="location.reload()" style="background:#eee; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">Nueva Recogida</button>
                 </div>
             `;
-        })
-        .catch(err => {
-            alert("Error crítico: " + err);
-            btn.disabled = false;
-            btn.style.display = "block";
-            status.style.display = "none";
-        });
+        }).catch(err => alert("Error al conectar: " + err));
     });
 </script>
 
