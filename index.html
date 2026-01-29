@@ -9,15 +9,16 @@
         :root { --gls-blue: #002e6d; --gls-yellow: #ffcb05; }
         body { font-family: sans-serif; background: #f4f4f9; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { color: var(--gls-blue); text-align: center; border-bottom: 2px solid var(--gls-yellow); padding-bottom: 10px; }
+        h2 { color: var(--gls-blue); text-align: center; border-bottom: 2px solid var(--gls-yellow); padding-bottom: 10px; margin-top: 0; }
         label { display: block; margin-top: 15px; font-weight: bold; color: #333; }
-        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-        #signature-pad { border: 1px solid #ccc; border-radius: 4px; background: #fafafa; width: 100%; height: 200px; cursor: crosshair; }
+        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        #signature-pad { border: 1px solid #ccc; border-radius: 4px; background: #fafafa; width: 100%; height: 200px; cursor: crosshair; touch-action: none; }
         .buttons { margin-top: 20px; }
         button { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 4px; cursor: pointer; border: none; }
         .btn-confirm { background: var(--gls-blue); color: white; margin-bottom: 10px; }
-        .btn-clear { background: #eee; color: #333; font-size: 14px; padding: 8px; }
-        .loading { display: none; text-align: center; color: var(--gls-blue); font-weight: bold; }
+        .btn-confirm:disabled { background: #ccc; }
+        .btn-clear { background: #eee; color: #333; font-size: 14px; padding: 8px; margin-top: 5px; }
+        .loading { display: none; text-align: center; color: var(--gls-blue); font-weight: bold; padding: 10px; }
     </style>
 </head>
 <body>
@@ -32,7 +33,7 @@
         <label>Número de Orden</label>
         <input type="text" id="orden" placeholder="Ej: HIS-12345" required>
 
-        <label>Nombre del Transportista (Aclaración)</label>
+        <label>Nombre del Transportista</label>
         <input type="text" id="nombre" placeholder="Nombre completo" required>
 
         <label>Cantidad de Bultos</label>
@@ -40,23 +41,23 @@
 
         <label>Firma Digital</label>
         <canvas id="signature-pad"></canvas>
-        <button type="button" class="btn-clear" onclick="signaturePad.clear()">Limpiar Firma</button>
+        <button type="button" class="btn-clear" id="clearBtn">Limpiar Firma</button>
 
         <div class="buttons">
-            <div id="status" class="loading">Enviando...</div>
+            <div id="status" class="loading">Enviando a Google Sheets...</div>
             <button type="submit" class="btn-confirm" id="submitBtn">Confirmar Recogida</button>
         </div>
     </form>
 </div>
 
 <script>
-    // URL DE TU GOOGLE APPS SCRIPT (Pega aquí la URL que copiaste en el paso anterior)
+    // URL DE TU GOOGLE APPS SCRIPT
     const APP_URL = "https://script.google.com/macros/s/AKfycbwnGVtPMq76rxv0DlOnLuixn8k4fWOJ5MncGsKgrq-_KGfVrqkj4jK77400TeZ_PaB2/exec";
 
-    const canvas = document.querySelector("canvas");
+    const canvas = document.getElementById("signature-pad");
     const signaturePad = new SignaturePad(canvas);
 
-    // Ajustar tamaño del canvas para móviles
+    // Ajustar tamaño del canvas dinámicamente
     function resizeCanvas() {
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
         canvas.width = canvas.offsetWidth * ratio;
@@ -66,6 +67,8 @@
     }
     window.onresize = resizeCanvas;
     resizeCanvas();
+
+    document.getElementById("clearBtn").addEventListener("click", () => signaturePad.clear());
 
     document.getElementById("recogidaForm").addEventListener("submit", function(e) {
         e.preventDefault();
@@ -77,6 +80,8 @@
 
         const btn = document.getElementById("submitBtn");
         const status = document.getElementById("status");
+        
+        btn.disabled = true;
         btn.style.display = "none";
         status.style.display = "block";
 
@@ -85,27 +90,32 @@
             orden: document.getElementById("orden").value,
             nombre: document.getElementById("nombre").value,
             bultos: document.getElementById("bultos").value,
-            firma: signaturePad.toDataURL() // Firma en Base64 (imagen de texto)
+            firma: signaturePad.toDataURL("image/png") 
         };
 
+        // Enviar como texto plano para evitar bloqueos de CORS en modo no-cors
         fetch(APP_URL, {
             method: "POST",
-            mode: "no-cors", // Necesario para Google Apps Script
+            mode: "no-cors", 
             cache: "no-cache",
+            headers: {
+                "Content-Type": "text/plain" 
+            },
             body: JSON.stringify(formData)
         })
         .then(() => {
             document.getElementById("form-container").innerHTML = `
                 <div style="text-align:center; padding: 40px 10px;">
                     <h2 style="color: green; border:none;">✅ ¡Recogida Confirmada!</h2>
-                    <p>La información ha sido guardada correctamente.</p>
-                    <p>ID: ${Math.floor(Date.now()/1000)}</p>
-                    <button onclick="location.reload()" class="btn-clear">Nueva Recogida</button>
+                    <p>La información se ha enviado correctamente a la hoja de control.</p>
+                    <p style="font-size: 12px; color: #666;">ID de Registro: ${Date.now()}</p>
+                    <button onclick="location.reload()" class="btn-clear" style="width:auto; padding: 10px 20px;">Nueva Recogida</button>
                 </div>
             `;
         })
         .catch(err => {
-            alert("Error al conectar: " + err);
+            alert("Error crítico: " + err);
+            btn.disabled = false;
             btn.style.display = "block";
             status.style.display = "none";
         });
