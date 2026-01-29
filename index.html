@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante Recogida GLS - Hisense</title>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    <style>
+        :root { --gls-blue: #002e6d; --gls-yellow: #ffcb05; }
+        body { font-family: sans-serif; background: #f4f4f9; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { color: var(--gls-blue); text-align: center; border-bottom: 2px solid var(--gls-yellow); padding-bottom: 10px; }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #333; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        #signature-pad { border: 1px solid #ccc; border-radius: 4px; background: #fafafa; width: 100%; height: 200px; cursor: crosshair; }
+        .buttons { margin-top: 20px; }
+        button { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 4px; cursor: pointer; border: none; }
+        .btn-confirm { background: var(--gls-blue); color: white; margin-bottom: 10px; }
+        .btn-clear { background: #eee; color: #333; font-size: 14px; padding: 8px; }
+        .loading { display: none; text-align: center; color: var(--gls-blue); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container" id="form-container">
+    <h2>Recogida de Repuestos</h2>
+    
+    <form id="recogidaForm">
+        <label>Fecha de Recogida</label>
+        <input type="date" id="fecha" required>
+
+        <label>Número de Orden</label>
+        <input type="text" id="orden" placeholder="Ej: HIS-12345" required>
+
+        <label>Nombre del Transportista (Aclaración)</label>
+        <input type="text" id="nombre" placeholder="Nombre completo" required>
+
+        <label>Cantidad de Bultos</label>
+        <input type="number" id="bultos" min="1" value="1" required>
+
+        <label>Firma Digital</label>
+        <canvas id="signature-pad"></canvas>
+        <button type="button" class="btn-clear" onclick="signaturePad.clear()">Limpiar Firma</button>
+
+        <div class="buttons">
+            <div id="status" class="loading">Enviando...</div>
+            <button type="submit" class="btn-confirm" id="submitBtn">Confirmar Recogida</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // URL DE TU GOOGLE APPS SCRIPT (Pega aquí la URL que copiaste en el paso anterior)
+    const APP_URL = "TU_URL_DE_APPS_SCRIPT_AQUI";
+
+    const canvas = document.querySelector("canvas");
+    const signaturePad = new SignaturePad(canvas);
+
+    // Ajustar tamaño del canvas para móviles
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad.clear();
+    }
+    window.onresize = resizeCanvas;
+    resizeCanvas();
+
+    document.getElementById("recogidaForm").addEventListener("submit", function(e) {
+        e.preventDefault();
+        
+        if (signaturePad.isEmpty()) {
+            alert("Por favor, firma antes de confirmar.");
+            return;
+        }
+
+        const btn = document.getElementById("submitBtn");
+        const status = document.getElementById("status");
+        btn.style.display = "none";
+        status.style.display = "block";
+
+        const formData = {
+            fecha: document.getElementById("fecha").value,
+            orden: document.getElementById("orden").value,
+            nombre: document.getElementById("nombre").value,
+            bultos: document.getElementById("bultos").value,
+            firma: signaturePad.toDataURL() // Firma en Base64 (imagen de texto)
+        };
+
+        fetch(APP_URL, {
+            method: "POST",
+            mode: "no-cors", // Necesario para Google Apps Script
+            cache: "no-cache",
+            body: JSON.stringify(formData)
+        })
+        .then(() => {
+            document.getElementById("form-container").innerHTML = `
+                <div style="text-align:center; padding: 40px 10px;">
+                    <h2 style="color: green; border:none;">✅ ¡Recogida Confirmada!</h2>
+                    <p>La información ha sido guardada correctamente.</p>
+                    <p>ID: ${Math.floor(Date.now()/1000)}</p>
+                    <button onclick="location.reload()" class="btn-clear">Nueva Recogida</button>
+                </div>
+            `;
+        })
+        .catch(err => {
+            alert("Error al conectar: " + err);
+            btn.style.display = "block";
+            status.style.display = "none";
+        });
+    });
+</script>
+
+</body>
+</html>
